@@ -3,17 +3,45 @@ import {Text, View, Image, SafeAreaView, TextInput, TouchableOpacity, ScrollView
 import { theme } from '../theme';
 import {CalendarDaysIcon, MagnifyingGlassIcon} from 'react-native-heroicons/outline'
 import {MapPinIcon} from 'react-native-heroicons/solid'
-import { useState } from 'react';
-
+import { useCallback, useState } from 'react';
+import {debounce} from 'lodash'
+import { fetchLocations, fetchWeatherForecast } from '../api/weather';
+import { weatherImages } from '../constants';
 
 export default function HomeScreen() {
 
     const [showSearch,toggleSearch]=useState(false);
-    const [locations, setLocations] = useState([1,2,3]);
-
+    const [locations, setLocations] = useState([]);
+    const [weather, setWeather] = useState({});
+    
     const handleLocation = (loc) =>{
-        console.log('location: ',loc)
+        // console.log('Location',loc)
+        setLocations([]);
+        toggleSearch(false)
+        fetchWeatherForecast({
+            cityName:loc.name,
+            days:'7'
+        }).then(data =>{
+            setWeather(data)
+            // console.log('Got Forecast',data)
+        })
     }
+
+    const handleSearch = value =>{
+        // console.log('Value',value)
+        //fetch locations
+        if(value.length>2){
+            fetchLocations({cityName:value}).then(data=>{
+                setLocations(data);
+            })
+        }
+    }
+    const handleTextDebounce = useCallback(debounce(handleSearch, 1200),[])
+    const {current,location} = weather;
+
+    // console.log(current?.condition?.icon);
+    // console.log(weather);
+
 
   return (
 
@@ -29,6 +57,7 @@ export default function HomeScreen() {
                    {
                      showSearch?(
                         <TextInput
+                        onChangeText={handleTextDebounce}
                         placeholder="Search City"
                         placeholderTextColor={'lightgray'}
                         className='pl-6 h-10 flex-1 text-base text-white'
@@ -59,7 +88,7 @@ export default function HomeScreen() {
                                         className={'flex-row items-center border-0 p-3 px-4 mb-1 border-b-2 border-b-gray-400'}
                                         >   
                                             <MapPinIcon size='20' color='gray'></MapPinIcon>
-                                            <Text className="text-black text-lg ml-2">Sudbury, ontario, CA</Text>
+                                            <Text className="text-black text-lg ml-2"> {loc?.name}, {loc?.region}, {loc?.country} </Text>
                                         </TouchableOpacity>
                                     )
                                 })
@@ -72,32 +101,36 @@ export default function HomeScreen() {
 
             {/* Forcast Section */}
             <View className="mx-4 flex justify-around flex-1 mb-2">
-                <Text className="text-white text-center text-2xl font-bold"> Sudbury,
+                <Text className="text-white text-center text-2xl font-bold"> {location?.name}
                     <Text className="text-;g font-semibold text-gray-300">
-                        Ontarion, CA
+                        {" " + location?.region}, {location?.country}
                     </Text>
                 </Text>
-                {/* Weather Image  */}
+                {/* Weather Image  */} 
                 <View className="flex-row justify-center">
-                    <Image source={require('../../assets/images/partlycloudy.png')}
+                    <Image source={{uri:'https:'+current?.condition?.icon}}
                     className="w-52 h-52"></Image>
+                    {/* <Image source={weatherImages[current?.condition?.text]} className="w-52 h-52"/> */}
+
                 </View>
                 {/* Temperature in Celcius  */}
                 <View className="space-y-2">
-                    <Text className="text-center font-bold text-white text-6xl ml-5"> 23 &#176;</Text>
-                    <Text className="text-center text-white text-3xl tracking-widest"> Partly Cloudy</Text>
+                    <Text className="text-center font-bold text-white text-6xl ml-5"> {current?.temp_c} &#176;</Text>
+                    <Text className="text-center text-white text-3xl tracking-widest"> {current?.condition?.text} </Text>
                 </View>
                 {/* Other Stats  */}
 
                 <View className="flex-row justify-between mx-4">
                     <View className="flex-row space-x-2 items-center">
                         <Image source={require('../../assets/icons/windBlack.png')} className="w-6 h-6"/>
-                        <Text className= "text-black font-semibold text-base">22Km</Text>
+                        <Text className= "text-black font-semibold text-base">{current?.wind_kph} kph</Text>
                     </View>
                     <View className="flex-row space-x-2 items-center">
                         <Image source={require('../../assets/icons/blackDrop.png')} className="w-6 h-6"/>
-                        <Text className= "text-black font-semibold text-base">23%</Text>
+                        <Text className= "text-black font-semibold text-base">{current?.humidity}%</Text>
                     </View>
+
+
                     <View className="flex-row space-x-2 items-center">
                         <Image source={require('../../assets/icons/sunBlack.png')} className="w-6 h-6"/>
                         <Text className= "text-black font-semibold text-base">6:05 AM</Text>
@@ -116,48 +149,31 @@ export default function HomeScreen() {
                     contentContainerStyle={{paddingHorizontal:15}}
                     showsHorizontalScrollIndicator={false}
                 >
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Monday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
+                    {
+                        weather?.forecast?.forecastday?.map((item,index) => {
 
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Tuesday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
-
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Wednesday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
-
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Thursday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
-
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Friday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
-
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Saturday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
-                    <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4' style={{backgroundColor:theme.bgDark(.25)}}>
-                        <Image source={require('../../assets/images/heavyrain.png')} className="w-11 h-11"/>
-                        <Text className='text-black'>Sunday</Text>
-                        <Text className='text-black'>23 &#176;</Text>
-                    </View>
+                            let date = new Date(item.date);
+                            let options = {weekday: 'long'};
+                            let dayName = date.toLocaleDateString('en-us',options)
+                            dayName = dayName.split(',')[0]
+                            return (
+                                <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4'
+                                 style={{backgroundColor:theme.bgDark(.25)}}
+                                 key={index}>
+                                    
+                                    <Image source={{uri:'https:'+item?.day?.condition?.icon}} className="w-11 h-11"/>
+                                    {/* <Image source={weatherImages[item?.day?.condition?.text]} className="w-11 h-11"/> */}
+                                    <Text className='text-black'>{dayName}</Text>
+                                    <Text className='text-black'>{item?.day?.avgtemp_c}&#176;</Text>
+                                </View>
+                            )
+                        })
+                    }
                 </ScrollView>
+            </View>
 
+            <View className="ml-4">
+                <Text> Functionality Yet To Come Here</Text>
             </View>
 
         </SafeAreaView>

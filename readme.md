@@ -21,3 +21,5 @@ Accessing and analyzing real-time weather data on mobile platforms presents chal
 
 ### Project Structure 
 - HomeScreen
+- https://www.weatherapi.com/
+- npm i react-native-progress
