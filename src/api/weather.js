@@ -3,8 +3,12 @@ import axios from 'axios';
 import { apiKey } from '../constants';
 
 
-const foreCastEndpoint= params => `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${params.cityName}&days=${params.days}&aqi=no&alerts=no` ;
-const locationsEndpoint= params => `https://api.weatherapi.com/v1/search.json?key=${apiKey}&q=${params.cityName}`;
+const foreCastEndpoint= params => `https://us-central1-weatherapp-421018.cloudfunctions.net/foreCastApi?apiKey=${apiKey}&city=${params.cityName}` ;
+
+
+const locationsEndpoint= params => `https://us-central1-weatherapp-421018.cloudfunctions.net/searchApi?apiKey=${apiKey}&city=${params.cityName}`;
+
+
 
 
 const apiCall = async (endpoint) =>{

@@ -1,6 +1,6 @@
 import {Text, View, Image} from 'react-native';
 
-export default function ForecastDays() {
+export default function WeatherCard() {
 
     return (
         <View className='flex justify-center items-center w-24 rounded-3xl py-3 space-y-1 mr-4'
